@@ -31,7 +31,7 @@ else
   done;
 fi
 
-# If paired-end reads, reorder fastq files by read name
+# If paired-end reads, reorder fastq files by read id
 a=./$input'_'output/${baseFileIDName}[_,.][R,r]1.fq
 b=./$input'_'output/${baseFileIDName}[_,.][R,r]2.fq
 # Get separator in read id
@@ -40,17 +40,16 @@ if [ -z "$separator" ]; then separator="None"; fi
 size=$(wc -c < $b)
 # If paired-end reads
 if [ $size -ge 10 ]; then
-  echo `date` "Reordering paired-end reads in $a and $b" >> $log
+  echo `date` "Paired-end data - reordering fastq files by read id" >> $log
   python /root/scripts/fastqCombinePairedEnd_v2.py $a $b $separator
 # If single-end reads
 else
-  echo `date` "${baseFileIDName} is single-end reads" >> $log
   mv ./$input'_'output/${baseFileIDName}[_,.][R,r]1.fq ./$input'_'output/${baseFileIDName}[_,.][R,r]1.fq_pairs_R1.fastq
 fi
 
 # Remove duplicate read ids
 dedup=()
-echo `date` "Removing duplicate read ids in ${baseFileIDName}" >> $log
+echo `date` "Removing duplicate read ids" >> $log
 for j in {1..2}; do
   cat ./$input'_'output/${baseFileIDName}[_,.][R,r]${j}.fq_pairs_R${j}.fastq | \
   perl /root/scripts/mergelines.pl | \
@@ -62,8 +61,8 @@ for j in {1..2}; do
 done
 
 # Compress groomed fastq files
+echo `date` "Compressing files" >> $log;
 for uncompressedFq in ${dedup[*]}; do
-  echo `date` "Compressing file $uncompressedFq" >> $log;
   pigz $uncompressedFq;
 done
 
